@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="395.0" prefWidth="423.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.">
+   <children>
+      <Label layoutX="110.0" layoutY="30.0" text="Account Recovery" textFill="#f20606">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label layoutX="34.0" layoutY="77.0" text="Enter Email Address Used to create your account below">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextField fx:id="forgot_email" layoutX="96.0" layoutY="173.0" prefHeight="25.0" prefWidth="211.0" promptText="jdoe@example.com" />
+      <Button fx:id="Forgot_Submit" layoutX="110.0" layoutY="198.0" mnemonicParsing="false" text="Submit" />
+   </children>
+</AnchorPane>

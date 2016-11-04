@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="750.0" prefWidth="954.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.MainController">
+   <children>
+      <Label fx:id="M_welcome" layoutX="435.0" layoutY="70.0" text="Status" />
+      <Button fx:id="Main_logout_Button" layoutX="855.0" layoutY="688.0" mnemonicParsing="false" onAction="#ClickLogOut" prefHeight="37.0" prefWidth="76.0" text="Logout" />
+      <Button fx:id="Main_Account_Button" layoutX="764.0" layoutY="689.0" mnemonicParsing="false" onAction="#ClickAccountUpdate" prefHeight="36.0" prefWidth="76.0" text="Account" />
+   </children>
+</AnchorPane>
