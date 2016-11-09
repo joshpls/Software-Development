@@ -1,6 +1,4 @@
 package controller;
-
-/*	Imports	*/
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +45,7 @@ public void setMain(Main mainIn)
 }
 public int mem_logid = 0;
 public int code_mem = 0;
+String emailregex = "^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.(?:[A-Z]{2,}|com|org|edu|net))+$";
 //Login inputs
 @FXML private TextField Login_Username;
 @FXML private PasswordField Login_Password;
@@ -71,21 +70,29 @@ public int code_mem = 0;
 @FXML private Button forgot_goback_Button;
 @FXML private Button forgot_continue_Button;
 @FXML private Label forgot_status1;
+@FXML private Button forgot_next;
+//Forgot Next Input
+@FXML private TextField fn_email;
+@FXML private TextField fn_code;
+@FXML private PasswordField fn_password;
+@FXML private PasswordField fn_rpassword;
+@FXML private Label fn_status;
+@FXML private Button fn_resetB;
+@FXML private Button Fn_Goback;
+
+
+
 
 //Main
-@FXML private Label M_welcome;
+@FXML private Label m_welcome;
 @FXML private Button Main_Account_Button;
 @FXML private Button Main_logout_Button ;
 
 Stage stage;
 Scene scene;
+Scene scene2;
 Parent root;
-
-/*	Section A	*/
-
-/*	On Click Events	*/
-public void ClickLogOut(ActionEvent event) throws Exception
-{
+public void ClickLogOut(ActionEvent event) throws Exception{
 	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
 	root = FXMLLoader.load(getClass().getResource("/view/Login.fxml"));
 	scene = new Scene(root);
@@ -93,67 +100,128 @@ public void ClickLogOut(ActionEvent event) throws Exception
 	mem_logid=0;
 	stage.setTitle("Logout!");
 }
+	public void ClickAccountUpdate(ActionEvent event) throws Exception{
+		Account();
+	}
 
-public void ClickAccountUpdate(ActionEvent event) throws Exception
-{
-	Account();
+public void ClickCA(ActionEvent event) throws Exception{
+	
+
+stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+root = FXMLLoader.load(getClass().getResource("/view/CreateAccount.fxml"));
+scene = new Scene(root);
+stage.setScene(scene);
 }
+public void ClickCAGoBack(ActionEvent event) throws Exception{
+	
 
-public void ClickCA(ActionEvent event) throws Exception
-{
-	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
-	root = FXMLLoader.load(getClass().getResource("/view/CreateAccount.fxml"));
-	scene = new Scene(root);
-	stage.setScene(scene);
+stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+root = FXMLLoader.load(getClass().getResource("/view/Login.fxml"));
+scene = new Scene(root);
+stage.setScene(scene);
 }
+public void ClickForgotButton(ActionEvent event) throws Exception{
+	
 
-public void ClickCAGoBack(ActionEvent event) throws Exception
-{
-	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
-	root = FXMLLoader.load(getClass().getResource("/view/Login.fxml"));
-	scene = new Scene(root);
-	stage.setScene(scene);
+stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+root = FXMLLoader.load(getClass().getResource("/view/ForgotView.fxml"));
+scene = new Scene(root);
+stage.setScene(scene);
+
 }
-
-public void ClickForgotButton(ActionEvent event) throws Exception
-{
-	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
-	root = FXMLLoader.load(getClass().getResource("/view/ForgotView.fxml"));
-	scene = new Scene(root);
-	stage.setScene(scene);
-}
-
 public void ClickCASubmit(ActionEvent event) throws Exception{
 	CASubmit();
 }
-public void ClickLoginButton (ActionEvent event) throws Exception
-{
+public void ClickLoginButton (ActionEvent event) throws Exception{
 	authenticate();
-	if (mem_logid != 0)
-	{
-		stage = (Stage)((Button) event.getSource()).getScene().getWindow();
-		root = FXMLLoader.load(getClass().getResource("/view/Main.fxml"));
-		scene = new Scene(root);
-		stage.setScene(scene);
-		welcome();
+	if (mem_logid != 0){
+	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+	root = FXMLLoader.load(getClass().getResource("/view/Main.fxml"));
+	scene = new Scene(root);
+	stage.setScene(scene);
+	welcome();
+	
 	}
 }
-
 public void ClickForgotSubmit (ActionEvent event) throws Exception{
 	
 	forgot();
 	
 }
-
-public void ClickForgotC (ActionEvent event) throws Exception
-{
-
+public void ClickForgotCode (ActionEvent event) throws Exception{
+	
+	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+	root = FXMLLoader.load(getClass().getResource("/view/forgotInput.fxml"));
+	scene2 = new Scene(root);
+	stage.setScene(scene2);
+}
+public void ClickFnButton (ActionEvent event) throws Exception{
+	reset();
 }
 
-/*	Section B	*/
+private void reset() {
+	String query = "update login set password= aes_encrypt(?,?), acode = NULL where acode= ? and email= ?";
+	try (Connection conn = DbConfig.getConnection();
+			PreparedStatement updatereset = conn.prepareStatement(query);){
+		String password,email, rpassword;
+		String code;
+		code= fn_code.getText();
+		email = fn_email.getText();
+		password = fn_password.getText();
+		rpassword = fn_rpassword.getText();
+		project reset= new project();
+		Boolean emailResult = email.matches(emailregex);
+		if (email == null || email == "" || emailResult == false) {
+			throw new Exception("Invalid Email.");
+		
+		}
+		if (code == null || code == "" || code == "0"){
+			throw new Exception("Invalid Code");
+		}
+		if (password.equals (rpassword)){
+			System.out.println("good password");
+		}else{
+			throw new Exception("Passwords do not match");
+		}
+		
+		// need password security validator
+		//
+		//
+		//
+		reset.setAcode(code);
+		reset.setEmail(email);
+		reset.setPassword(rpassword);
+		updatereset.setString(1, reset.getPassword());
+		updatereset.setString(2, reset.getPassword());
+		updatereset.setString(3, reset.getAcode());
+		updatereset.setString(4, reset.getEmail());
+		int result = updatereset.executeUpdate();
+		
+if (result ==1){
+			
+			fn_status.setTextFill(Color.GREEN);
+			fn_email.setText(null);
+			fn_password.setText(null);
+			fn_rpassword.setText(null);
+			fn_code.setText(null);
+			fn_status.setText("Thank you, Your password is reset!");
+			
+			
+		}else{
+			throw new Exception("Invalid Email or Password");
+			
+		}
 
-/*	Forgot Username / Password 	- Emails user their password 	*/
-private void forgot() {	
+
+		
+	}catch(Exception e){
+		fn_status.setText(e.getMessage());
+		fn_status.setTextFill(Color.RED);
+	}
+	
+	
+}
+private void forgot() {
 	String query = "update login set Acode = ? where email = ? ";
 	try (Connection conn = DbConfig.getConnection();
 			PreparedStatement insertprofile = conn.prepareStatement(query);){
@@ -163,10 +231,11 @@ private void forgot() {
 		email = forgot_email.getText();
 		code_mem = code;
 		project forgot = new project();
-		String emailregex = "^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.(?:[A-Z]{2,}|com|org|net|edu))+$";	//Emails Allowed: .com, .org, .net, .edu
+		
 		Boolean emailResult = email.matches(emailregex);
 		if (email == null || email == "" || emailResult == false) {
 			throw new Exception("Invalid Email.");
+		
 		}
 		forgot.setCode(code);
 		
@@ -200,7 +269,7 @@ private void forgot() {
 		new javax.mail.Authenticator() {
 			protected PasswordAuthentication getPasswordAuthentication() {
 			
-				return new PasswordAuthentication("","");
+				return new PasswordAuthentication("fasttax3300@gmail.com","u'EE7K.:)2e6");
 			}
 		});
 
@@ -208,11 +277,11 @@ private void forgot() {
 
 		Message message = new MimeMessage(session);
 		
-		message.setFrom(new InternetAddress("jmccaron@gmail.com"));
+		message.setFrom(new InternetAddress("fasttax3300@gmail.com"));
 	
 		message.setRecipients(Message.RecipientType.TO,
 				InternetAddress.parse(forgot_email.getText()));
-		
+		message.setSubject("Password Reset");
 		
 		message.setText("Hello," +
 				"\n\n Your password reset code is:  "+ code_mem + " \n Thank you!" );
@@ -223,7 +292,7 @@ private void forgot() {
 		code_mem= 0;
 		
 		forgot_status.setText("Send! Please check your email");
-		
+		forgot_email.setText(null);
 
 	} catch (Exception e) {
 		forgot_status.setText(e.getMessage());
@@ -232,15 +301,11 @@ private void forgot() {
 	}
 	
 }
-
-/*	Account 	*/
 public void Account() throws Exception{
-	
-}
 
-/*	Welcome Screen	*/
+}
 private void welcome() throws Exception{
-	System.out.println(mem_logid);
+
 
 	String query = "Select firstname, lastname from login where loginid = ?";
 	try(Connection conn= DbConfig.getConnection()){
@@ -252,20 +317,20 @@ private void welcome() throws Exception{
 			String firstname = result1.getString("firstname");
 			String lastname = result1.getString("lastname");
 			stage.setTitle(" Welcome " + firstname + " " + lastname+ "! ");
-			M_welcome.setText("System Error: missing logid ");
+			//m_welcome.setText("System Error: missing logid ");
 			
 			
 		}else{
-			M_welcome.setText("System Error: missing logid ");
+			m_welcome.setText("System Error: missing logid ");
 		}
+		//m_welcome.setText("System Error: missing logid ");
+
 	}catch(Exception e){
 		System.out.println(" " +e.getMessage());
 		
 	}
 	
 }
-
-/*	Authentication 	*/
 public void authenticate() throws Exception {
 	String query = "Select LoginId from Login Where username = ? AND password = aes_encrypt(?,?) ";
 	try(Connection conn= DbConfig.getConnection()){
@@ -295,9 +360,6 @@ public void authenticate() throws Exception {
 		
 	}
 }
-
-/*	Section C 	*/
-/*	Create Account - Submittion	to Database*/
 public void CASubmit() throws Exception {
 	String query = "insert into Login " + "(LoginId, email, Username, password, firstname, lastname)"
 			+ "values(?,?,?,aes_encrypt(?,?),?,?)";
@@ -316,9 +378,7 @@ public void CASubmit() throws Exception {
 		username = CA_UserName.getText();
 		password = CA_Password.getText();
 		rpassword = CA_Rpassword.getText();
-		String emailregex = "^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.(?:[A-Z]{2,}|com|org|net|edu))+$";	//Emails Allowed: .com, .org, .net, .edu
-		String passregex = "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}";
-		Boolean passResult = password.matches(passregex);
+		
 		Boolean emailResult = email.matches(emailregex);
 
 
@@ -340,16 +400,13 @@ public void CASubmit() throws Exception {
 		if (password == null || password == "" || password.trim().isEmpty()) {
 			throw new Exception("Need Password.");
 		}
-		if (password.length() <= 7){
+		if (password.length() < 8){
 
 			throw new Exception ("Password is to short! ");
 		}
 		if (rpassword == null || rpassword == "" || rpassword.trim().isEmpty()) {
 			throw new Exception("Need Password.");
 		}
-		if (passResult == false)
-			throw new Exception("Invalid Password." + "\b 1 Upper, 1 lower, 1 Special, min 8 characters.");
-
 		if (password.equals (rpassword)) {
 			System.out.println("password good");
 		}else {

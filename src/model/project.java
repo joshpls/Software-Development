@@ -2,6 +2,8 @@ package model;
 
 public class project {
 	private int UserId;
+	private int code;
+	private String acode;
 	private String 	firstName;
 	private String  lastName;
 	private String	email;
@@ -42,6 +44,18 @@ public class project {
 	}
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	public int getCode() {
+		return code;
+	}
+	public void setCode(int code) {
+		this.code = code;
+	}
+	public String getAcode() {
+		return acode;
+	}
+	public void setAcode(String acode) {
+		this.acode = acode;
 	}
 
 }
