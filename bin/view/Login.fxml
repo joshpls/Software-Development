@@ -40,7 +40,7 @@
       <PasswordField fx:id="Login_Password" GridPane.columnIndex="2" GridPane.rowIndex="2" />
       <TextField fx:id="Login_Username" GridPane.columnIndex="2" GridPane.rowIndex="1" />
       <Button fx:id="Login_button" mnemonicParsing="false" onAction="#ClickLoginButton" text="Login" GridPane.columnIndex="3" GridPane.rowIndex="2" />
-      <Label fx:id="Login_status" text="Status" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+      <Label fx:id="Login_status" GridPane.columnIndex="2" GridPane.rowIndex="4" />
       <Button fx:id="Login_Forgot" mnemonicParsing="false" onAction="#ClickForgotButton" text="Forgot" GridPane.columnIndex="3" GridPane.rowIndex="3" />
       <Button fx:id="Login_Create" mnemonicParsing="false" onAction="#ClickCA" text="Create an account" GridPane.columnIndex="2" GridPane.rowIndex="3" />
    </children>

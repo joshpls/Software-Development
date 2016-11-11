@@ -5,16 +5,16 @@ import java.sql.ResultSet;
 //import java.sql.SQLException;
 //import java.sql.Statement;
 //import java.util.ArrayList;
-
+import application.smtp;
 import java.util.Properties;
 import javax.mail.Message;
-import javax.mail.MessagingException;
+//import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javafx.scene.control.ProgressIndicator;
+//import javafx.scene.control.ProgressIndicator;
 import model.project;
 import application.Main;
 import application.DbConfig;
@@ -29,23 +29,37 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 //import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
 //import javafx.scene.input.KeyEvent;
 //import javafx.scene.input.MouseEvent;
 //import javafx.scene.layout.GridPane;
 //import javafx.scene.layout.Pane;
 //import javafx.scene.layout.RowConstraints;
 import javafx.scene.paint.Color;
+//import javafx.stage.Modality;
 import javafx.stage.Stage;
+//import javafx.stage.StageStyle;
 
 public class MainController {
+	
+
+
+
 private Main main;
 public void setMain(Main mainIn)
 {
 	main = mainIn;
 }
-public int mem_logid = 0;
-public int code_mem = 0;
+
+public static int mem_logid;
+public int code_mem;
+public static String mem_email;
+public static String mem_username;
+public static String mem_timestamp;
 String emailregex = "^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.(?:[A-Z]{2,}|com|org|edu|net))+$";
+//email connection
+
+
 //Login inputs
 @FXML private TextField Login_Username;
 @FXML private PasswordField Login_Password;
@@ -79,15 +93,25 @@ String emailregex = "^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.(?:[A-
 @FXML private Label fn_status;
 @FXML private Button fn_resetB;
 @FXML private Button Fn_Goback;
-
-
-
-
+//Account
+@FXML private Button UA_UUB;
+@FXML private Button UA_UE;
+@FXML private Button UA_UPB;
+@FXML private Button UA_DAB;
+@FXML private TextField UA_username;
+@FXML private TextField UA_email;
+@FXML private PasswordField UA_password;
+@FXML private PasswordField UA_rpassword;
+@FXML private Label UA_status;
 //Main
 @FXML private Label m_welcome;
 @FXML private Button Main_Account_Button;
 @FXML private Button Main_logout_Button ;
-
+//Delete
+@FXML private PasswordField D_password;
+@FXML private Button D_button;
+@FXML private Button D_GB;
+@FXML private Label D_status;
 Stage stage;
 Scene scene;
 Scene scene2;
@@ -101,7 +125,13 @@ public void ClickLogOut(ActionEvent event) throws Exception{
 	stage.setTitle("Logout!");
 }
 	public void ClickAccountUpdate(ActionEvent event) throws Exception{
-		Account();
+		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Account.fxml"));
+		Parent root = (Parent) fxmlLoader.load();
+		Stage stage = new Stage();
+		
+		stage.setScene(new Scene(root));
+		stage.show();
+		
 	}
 
 public void ClickCA(ActionEvent event) throws Exception{
@@ -148,16 +178,321 @@ public void ClickForgotSubmit (ActionEvent event) throws Exception{
 	forgot();
 	
 }
-public void ClickForgotCode (ActionEvent event) throws Exception{
-	
+public void ClickDGB (ActionEvent event) throws Exception{
 	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
-	root = FXMLLoader.load(getClass().getResource("/view/forgotInput.fxml"));
-	scene2 = new Scene(root);
-	stage.setScene(scene2);
+	root = FXMLLoader.load(getClass().getResource("/view/Account.fxml"));
+	scene = new Scene(root);
+	stage.setScene(scene);
+}
+public void ClickForgotCode (ActionEvent event) throws Exception{
+	FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/forgotInput.fxml"));
+	Parent root = (Parent) fxmlLoader.load();
+	Stage stage = new Stage();
+	//stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+	//root = FXMLLoader.load(getClass().getResource("/view/forgotInput.fxml"));
+	//stage.initModality(Modality.APPLICATION_MODAL);
+	//stage.initStyle(StageStyle.UNDECORATED);
+	//scene2 = new Scene(root);
+	//stage.setScene(scene2);
+	stage.setScene(new Scene(root));
+	stage.show();
 }
 public void ClickFnButton (ActionEvent event) throws Exception{
 	reset();
 }
+public void ClickUUB (ActionEvent event) throws Exception{
+	String query = "update login set username = ? where loginid = ? ";
+	try (Connection conn = DbConfig.getConnection();
+			PreparedStatement insertprofile = conn.prepareStatement(query);){
+		String username;int loginid;
+		 loginid = mem_logid;
+		username = UA_username.getText();
+		
+		project change = new project();
+		change.setUserId(loginid);
+		change.setUsername(username);
+		insertprofile.setString(1, change.getUsername());
+		insertprofile.setInt(2, change.getUserId());
+		if (username == null || username == "" || username.trim().isEmpty()) {
+			throw new Exception("Need Username");
+		}
+		int result = insertprofile.executeUpdate();
+		
+		
+		if (result ==1){
+			
+			
+			UA_status.setTextFill(Color.GREEN);}else{
+			throw new Exception("Can not proceed");}
+		Properties props = new Properties();
+		
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.socketFactory.port", "465");
+		props.put("mail.smtp.socketFactory.class",
+				"javax.net.ssl.SSLSocketFactory");
+		props.put("mail.smtp.auth", "true");
+		
+		props.put("mail.smtp.port", "465");
+
+		Session session = Session.getDefaultInstance(props,
+			new javax.mail.Authenticator() {
+				protected PasswordAuthentication getPasswordAuthentication() {
+				
+					return new PasswordAuthentication("fasttax3300@gmail.com","u'EE7K.:)2e6");
+				}
+			});
+			Message message = new MimeMessage(session);
+			
+			message.setFrom(new InternetAddress("fasttax3300@gmail.com"));
+		
+			message.setRecipients(Message.RecipientType.TO,
+					InternetAddress.parse(mem_email));
+			message.setSubject("Update Alert");
+			
+			message.setText("Hello," +
+					"\n\n This is a friendly reminder that your username has been updated to " + change.getUsername() +
+					"\n \n Thank you, FastTax");
+		
+			Transport.send(message);
+
+			System.out.println("Done");
+			UA_status.setText("Username reset");
+			UA_username.setText(null);
+		
+	}catch (Exception e){
+		UA_status.setTextFill(Color.RED);
+		UA_status.setText(e.getMessage());
+		System.out.println(mem_email);
+	}
+	
+}
+public void ClickUAUE (ActionEvent event) throws Exception{
+	
+		String query = "update login set email = ? where loginid = ? ";
+		try (Connection conn = DbConfig.getConnection();
+				PreparedStatement insertprofile = conn.prepareStatement(query);){
+			String email;int loginid;
+			 loginid = mem_logid;
+			email = UA_email.getText();
+			
+			project change = new project();
+			change.setUserId(loginid);
+			change.setEmail(email);
+			insertprofile.setString(1, change.getEmail());
+			insertprofile.setInt(2, change.getUserId());
+			Boolean emailResult = email.matches(emailregex);
+			if (email == null || email == "" || emailResult == false) {
+				throw new Exception("Invalid Email.");
+			}
+			int result = insertprofile.executeUpdate();
+			
+			
+			if (result ==1){
+				
+				
+				UA_status.setTextFill(Color.GREEN);}else{
+				throw new Exception("Can not Proceed");}
+			Properties props = new Properties();
+			
+			props.put("mail.smtp.host", "smtp.gmail.com");
+			props.put("mail.smtp.socketFactory.port", "465");
+			props.put("mail.smtp.socketFactory.class",
+					"javax.net.ssl.SSLSocketFactory");
+			props.put("mail.smtp.auth", "true");
+			
+			props.put("mail.smtp.port", "465");
+
+			Session session = Session.getDefaultInstance(props,
+				new javax.mail.Authenticator() {
+					protected PasswordAuthentication getPasswordAuthentication() {
+					
+						return new PasswordAuthentication("fasttax3300@gmail.com","u'EE7K.:)2e6");
+					}
+				});
+				Message message = new MimeMessage(session);
+				
+				message.setFrom(new InternetAddress("fasttax3300@gmail.com"));
+			
+				message.setRecipients(Message.RecipientType.TO,
+						InternetAddress.parse(mem_email));
+				message.setSubject("Update Alert");
+				
+				message.setText("Hello," +
+						"\n\n This is a friendly reminder that your email has been updated to " + change.getEmail() + " for know on all notifications will be sent to this email."+
+						"\n \n Thank you, FastTax");
+			
+				Transport.send(message);
+
+				System.out.println("Done");
+				UA_status.setText("Email reset");
+				UA_email.setText(null);
+			
+		}catch (Exception e){
+			UA_status.setTextFill(Color.RED);
+			UA_status.setText(e.getMessage());
+			System.out.println(mem_email);
+		}
+		
+	
+}
+public void ClickUAUP(ActionEvent event) throws Exception{
+	String query = "update login set password= aes_encrypt(?,?) where loginid = ? ";
+	try (Connection conn = DbConfig.getConnection();
+			PreparedStatement insertprofile = conn.prepareStatement(query);){
+		String password,rpassword;int loginid;
+		 loginid = mem_logid;
+		password = UA_password.getText();
+		rpassword = UA_rpassword.getText();
+		
+		project change = new project();
+		change.setUserId(loginid);
+		change.setPassword(password);
+		insertprofile.setString(1, change.getPassword());
+		insertprofile.setString(2, change.getPassword());
+		insertprofile.setInt(3, change.getUserId());
+		if (password == null || password == "" || password.trim().isEmpty()) {
+			throw new Exception("Need Password.");
+		}
+		if (password.length() < 8){
+
+			throw new Exception ("Password is to short! ");
+		}
+		if (rpassword == null || rpassword == "" || rpassword.trim().isEmpty()) {
+			throw new Exception("Need Password.");
+		}
+		if (password.equals (rpassword)) {
+			System.out.println("password good");
+		}else {
+			throw new Exception ("Passwords do not match");
+		}
+		int result = insertprofile.executeUpdate();
+		
+		
+		if (result ==1){
+			
+			
+			UA_status.setTextFill(Color.GREEN);}else{
+			throw new Exception("Can not Proceed");}
+		Properties props = new Properties();
+		
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.socketFactory.port", "465");
+		props.put("mail.smtp.socketFactory.class",
+				"javax.net.ssl.SSLSocketFactory");
+		props.put("mail.smtp.auth", "true");
+		
+		props.put("mail.smtp.port", "465");
+
+		Session session = Session.getDefaultInstance(props,
+			new javax.mail.Authenticator() {
+				protected PasswordAuthentication getPasswordAuthentication() {
+				
+					return new PasswordAuthentication("fasttax3300@gmail.com","u'EE7K.:)2e6");
+				}
+			});
+			Message message = new MimeMessage(session);
+			
+			message.setFrom(new InternetAddress("fasttax3300@gmail.com"));
+		
+			message.setRecipients(Message.RecipientType.TO,
+					InternetAddress.parse(mem_email));
+			message.setSubject("Update Alert");
+			
+			message.setText("Hello," +
+					"\n\n This is a friendly reminder that your password has been updated!" +
+					"\n \n Thank you, FastTax");
+		
+			Transport.send(message);
+
+			System.out.println("Done");
+			UA_status.setText("Password reset");
+			UA_rpassword.setText(null);
+			UA_password.setText(null);
+		
+	}catch (Exception e){
+		UA_status.setTextFill(Color.RED);
+		UA_status.setText(e.getMessage());
+		System.out.println(mem_email);
+	}
+	
+}
+public void ClickUADA (ActionEvent event) throws Exception{
+	stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+	root = FXMLLoader.load(getClass().getResource("/view/Delete.fxml"));
+	scene = new Scene(root);
+	stage.setScene(scene);
+}
+public void ClickDB (ActionEvent event) throws Exception{
+	String query = "DELETE FROM `login` WHERE password = aes_encrypt(?,?) and loginid = ?  ";
+	try (Connection conn = DbConfig.getConnection();
+			PreparedStatement insertprofile = conn.prepareStatement(query);){
+		String password;int loginid;
+		 loginid = mem_logid;
+		password =D_password.getText();
+		
+		project change = new project();
+		change.setUserId(loginid);
+		change.setPassword(password);
+		insertprofile.setString(1, change.getPassword());
+		insertprofile.setString(2, change.getPassword());
+		insertprofile.setInt(3, change.getUserId());
+		if (password == null || password == "" || password.trim().isEmpty()) {
+			throw new Exception("Need Password");
+		}
+		int result = insertprofile.executeUpdate();
+		
+		
+		
+		if (result ==1){
+			
+			
+			D_status.setTextFill(Color.GREEN);}else{
+			throw new Exception("Password unknown");}
+		stage = (Stage)((Button) event.getSource()).getScene().getWindow();
+		stage.close();
+Properties props = new Properties();
+		
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.socketFactory.port", "465");
+		props.put("mail.smtp.socketFactory.class",
+				"javax.net.ssl.SSLSocketFactory");
+		props.put("mail.smtp.auth", "true");
+		
+		props.put("mail.smtp.port", "465");
+
+		Session session = Session.getDefaultInstance(props,
+			new javax.mail.Authenticator() {
+				protected PasswordAuthentication getPasswordAuthentication() {
+				
+					return new PasswordAuthentication("fasttax3300@gmail.com","u'EE7K.:)2e6");
+				}
+			});
+			Message message = new MimeMessage(session);
+			
+			message.setFrom(new InternetAddress("fasttax3300@gmail.com"));
+		
+			message.setRecipients(Message.RecipientType.TO,
+					InternetAddress.parse(mem_email));
+			message.setSubject("Update Alert");
+			
+			message.setText("Hello," +
+					"\n\n We notice that you deleted your account and we want to let you know it was done Successfully!" +
+					"\n \n Thank you for using FastTax");
+		
+			Transport.send(message);
+
+			System.out.println("Done");
+		
+	
+		
+	}catch (Exception e){
+		D_status.setTextFill(Color.RED);
+		D_status.setText(e.getMessage());
+		
+	}
+	
+}
+
 
 private void reset() {
 	String query = "update login set password= aes_encrypt(?,?), acode = NULL where acode= ? and email= ?";
@@ -208,7 +543,7 @@ if (result ==1){
 			
 			
 		}else{
-			throw new Exception("Invalid Email or Password");
+			throw new Exception("Invalid Email and Code");
 			
 		}
 
@@ -301,13 +636,12 @@ private void forgot() {
 	}
 	
 }
-public void Account() throws Exception{
 
-}
+
 private void welcome() throws Exception{
 
 
-	String query = "Select firstname, lastname from login where loginid = ?";
+	String query = "Select firstname, lastname, email from login where loginid = ?";
 	try(Connection conn= DbConfig.getConnection()){
 		PreparedStatement welcome = conn.prepareStatement(query); 
 		welcome.setInt(1, mem_logid);
@@ -316,6 +650,9 @@ private void welcome() throws Exception{
 			
 			String firstname = result1.getString("firstname");
 			String lastname = result1.getString("lastname");
+			mem_email = result1.getString("email");
+			 
+			
 			stage.setTitle(" Welcome " + firstname + " " + lastname+ "! ");
 			//m_welcome.setText("System Error: missing logid ");
 			
@@ -361,8 +698,8 @@ public void authenticate() throws Exception {
 	}
 }
 public void CASubmit() throws Exception {
-	String query = "insert into Login " + "(LoginId, email, Username, password, firstname, lastname)"
-			+ "values(?,?,?,aes_encrypt(?,?),?,?)";
+	String query = "insert into Login " + "(LoginId, email, Username, password, firstname, lastname, acode)"
+			+ "values(?,?,?,aes_encrypt(?,?),?,?, NULL)";
 	//String query = "insert into Login " + "(LoginId, email, Username, password, firstname, lastname)"
 		//	+ "values(1234,4343,2323,aes_encrypt(2323,2323),2323,2323)";
 	
@@ -436,6 +773,8 @@ public void CASubmit() throws Exception {
 		int affectedRow = insertprofile.executeUpdate();
 
 		if (affectedRow == 1) {
+Properties props = new Properties();
+			
 			
 
 		
@@ -446,8 +785,49 @@ public void CASubmit() throws Exception {
 			CA_UserName.setText(null);
 			CA_Password.setText(null);
 			CA_Rpassword.setText(null);
-			CA_status.setText("Your Submittion has been completed " + login.getFirstName() + " " + login.getLastName() +
-					"an email will be sent to you (" + login.getEmail() + ") shortly");
+			CA_status.setText("Your Submittion has been completed check your email!");
+		
+			//email sent
+			props.put("mail.smtp.host", "smtp.gmail.com");
+			props.put("mail.smtp.socketFactory.port", "465");
+			props.put("mail.smtp.socketFactory.class",
+					"javax.net.ssl.SSLSocketFactory");
+			props.put("mail.smtp.auth", "true");
+			
+			props.put("mail.smtp.port", "465");
+
+			Session session = Session.getDefaultInstance(props,
+				new javax.mail.Authenticator() {
+					protected PasswordAuthentication getPasswordAuthentication() {
+					
+						return new PasswordAuthentication("fasttax3300@gmail.com","u'EE7K.:)2e6");
+					}
+				});
+
+			
+
+				Message message = new MimeMessage(session);
+				
+				message.setFrom(new InternetAddress("fasttax3300@gmail.com"));
+			
+				message.setRecipients(Message.RecipientType.TO,
+						InternetAddress.parse(login.getEmail()));
+				message.setSubject("Account Created");
+				
+				message.setText("Hello " + login.getFirstName() + " " + login.getLastName() +" Username: (" + login.getUsername() +") "+
+						"\n\n We just like to inform you that your account has been successfully created."+
+						"\n We just want to let you know that our email system well inform you of any  password reset, deletion or changes to your account information. "+
+						 " \n We well not send any personal information such as any personal tax data that you have input in your system." +
+						"\n Thank you for choosing FastTax and we hope you get a big refund this tax season" +
+						 "\n Sincerely,"+ 
+						" \n\n The FastTax Team");
+			
+				Transport.send(message);
+
+				System.out.println("Done");
+			
+	
+			
 		}
 
 	} catch (Exception e) {
